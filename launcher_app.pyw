@@ -21,6 +21,14 @@ from launcher.main_window import MainWindow
 
 
 def main():
+    # Set Windows AppUserModelID so Taskbar uses our custom icon instead of Python's logo
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("ScriptsHub.Launcher.1.0")
+        except Exception:
+            pass
+
     # Enable high DPI scaling
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
@@ -30,7 +38,11 @@ def main():
     app.setApplicationName("Scripts Hub")
     app.setOrganizationName("ScriptsHub")
 
-    # Set application icon if available
+    # Set application icon
+    icon_path = SCRIPTS_ROOT / "launcher" / "resources" / "app_icon.ico"
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
+
     window = MainWindow()
 
     # Check for --minimized argument (e.g. from Windows boot startup)

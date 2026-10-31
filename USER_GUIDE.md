@@ -25,9 +25,9 @@ Welcome to **Scripts Hub**, a desktop interface built with **Qt (PySide6)** to m
 ## 1. Quick Start
 
 ### How to Open Scripts Hub
-* **Method 1 (Recommended)**: Double-click **`D:\Scripts\launcher_app.pyw`**.  
-  *(The `.pyw` extension ensures that the application opens directly without opening an unwanted black command prompt window).*
-* **Method 2 (Command Line)**:
+* **Method 1 (Desktop Shortcut)**: Double-click the **`ScriptsHub`** shortcut directly on your Windows Desktop (featuring the electric blue icon ⚡).
+* **Method 2 (From Folder)**: Double-click [**`D:\Scripts\launcher_app.pyw`**](file:///d:/Scripts/launcher_app.pyw).
+* **Method 3 (Command Line)**:
   ```powershell
   cd D:\Scripts
   python launcher_app.pyw
@@ -120,6 +120,7 @@ All original scripts have been enhanced to be safe, fast, and configurable from 
 * **Features in UI**:
   * Select any folder containing videos.
   * Uses `ffprobe` to compute per-video playback lengths and cumulative total watch time (Hours, Minutes, Seconds).
+  * **Silent Background Execution**: Runs with `CREATE_NO_WINDOW`, suppressing any flashing black terminal boxes completely.
 
 ### File Size & Codec Inspector (`fileSize.py`)
 * **Features in UI**:

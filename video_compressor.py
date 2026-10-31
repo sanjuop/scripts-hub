@@ -41,12 +41,17 @@ def get_video_info(file_path):
         str(file_path),
     ]
 
+    extra_flags = {}
+    if sys.platform == "win32":
+        extra_flags["creationflags"] = subprocess.CREATE_NO_WINDOW
+
     result = subprocess.run(
         command,
         capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
+        **extra_flags
     )
 
     if result.returncode != 0:
@@ -423,9 +428,14 @@ def compress_video(
         str(output_file),
     ]
 
+    extra_flags = {}
+    if sys.platform == "win32":
+        extra_flags["creationflags"] = subprocess.CREATE_NO_WINDOW
+
     subprocess.run(
         command,
         check=True,
+        **extra_flags
     )
 
 

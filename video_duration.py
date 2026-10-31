@@ -27,6 +27,10 @@ VIDEO_EXTENSIONS = {
 def get_video_duration(video_path):
     """Return video duration in seconds using FFprobe."""
     try:
+        extra_flags = {}
+        if sys.platform == "win32":
+            extra_flags["creationflags"] = subprocess.CREATE_NO_WINDOW
+
         result = subprocess.run(
             [
                 "ffprobe",
@@ -37,7 +41,8 @@ def get_video_duration(video_path):
             ],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
+            **extra_flags
         )
         return float(result.stdout.strip())
     except (subprocess.CalledProcessError, ValueError, FileNotFoundError):

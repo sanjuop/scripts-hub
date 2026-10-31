@@ -105,9 +105,13 @@ class MainWindow(QMainWindow):
         self.resize(1150, 780)
         self.setStyleSheet(DARK_THEME)
 
+        self.scripts_dir = Path(__file__).resolve().parent.parent
+        self.icon_path = self.scripts_dir / "launcher" / "resources" / "app_icon.ico"
+        if self.icon_path.exists():
+            self.setWindowIcon(QIcon(str(self.icon_path)))
+
         self.manifest = ScriptManifest()
         self.process_manager = ProcessManager(self)
-        self.scripts_dir = Path(__file__).resolve().parent.parent
 
         # State
         self.param_widgets: Dict[str, QWidget] = {}
@@ -319,9 +323,11 @@ class MainWindow(QMainWindow):
     def _init_tray(self):
         """Initialize Windows system tray icon and menu."""
         self.tray_icon = QSystemTrayIcon(self)
-        # Use standard system icon fallback
-        icon = self.style().standardIcon(self.style().StandardPixmap.SP_ComputerIcon)
-        self.tray_icon.setIcon(icon)
+        if self.icon_path.exists():
+            self.tray_icon.setIcon(QIcon(str(self.icon_path)))
+        else:
+            icon = self.style().standardIcon(self.style().StandardPixmap.SP_ComputerIcon)
+            self.tray_icon.setIcon(icon)
 
         tray_menu = QMenu()
         act_show = QAction("Open Scripts Hub", self)

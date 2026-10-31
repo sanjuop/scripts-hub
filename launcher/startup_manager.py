@@ -56,6 +56,10 @@ class StartupManager:
         if start_minimized:
             args += " --minimized"
 
+        # Determine icon path
+        icon_path = scripts_dir / "launcher" / "resources" / "app_icon.ico"
+        icon_line = f"$s.IconLocation = '{icon_path}';" if icon_path.exists() else ""
+
         # Create shortcut via PowerShell WScript.Shell
         ps_cmd = (
             f"$ws = New-Object -ComObject WScript.Shell; "
@@ -64,6 +68,7 @@ class StartupManager:
             f"$s.Arguments = '{args}'; "
             f"$s.WorkingDirectory = '{scripts_dir}'; "
             f"$s.Description = 'Scripts Hub Launcher'; "
+            f"{icon_line} "
             f"$s.Save()"
         )
 
@@ -78,5 +83,45 @@ class StartupManager:
             return shortcut_path.exists()
         except Exception as e:
             print(f"[Error] Failed to create startup shortcut: {e}")
+            return False
+
+    @classmethod
+    def create_desktop_shortcut(cls) -> bool:
+        """Create a direct shortcut on the user's desktop."""
+        desktop_dir = Path.home() / "Desktop"
+        shortcut_path = desktop_dir / f"{cls.APP_NAME}.lnk"
+        scripts_dir = Path(__file__).resolve().parent.parent
+        launcher_script = scripts_dir / "launcher_app.pyw"
+
+        python_exe = Path(sys.executable)
+        pythonw_exe = python_exe.parent / "pythonw.exe"
+        if not pythonw_exe.exists():
+            pythonw_exe = python_exe
+
+        icon_path = scripts_dir / "launcher" / "resources" / "app_icon.ico"
+        icon_line = f"$s.IconLocation = '{icon_path}';" if icon_path.exists() else ""
+
+        ps_cmd = (
+            f"$ws = New-Object -ComObject WScript.Shell; "
+            f"$s = $ws.CreateShortcut('{shortcut_path}'); "
+            f"$s.TargetPath = '{pythonw_exe}'; "
+            f"$s.Arguments = '\"{launcher_script}\"'; "
+            f"$s.WorkingDirectory = '{scripts_dir}'; "
+            f"$s.Description = 'Scripts Hub Desktop Launcher'; "
+            f"{icon_line} "
+            f"$s.Save()"
+        )
+
+        try:
+            subprocess.run(
+                ["powershell", "-NoProfile", "-Command", ps_cmd],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            return shortcut_path.exists()
+        except Exception as e:
+            print(f"[Error] Failed to create desktop shortcut: {e}")
+            return False
             return False
 
