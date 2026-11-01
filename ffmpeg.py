@@ -210,7 +210,7 @@ def main():
 
             try:
                 extra_flags = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
-            proc = subprocess.run(cmd, check=True, **extra_flags)
+                proc = subprocess.run(cmd, check=True, **extra_flags)
                 successful += 1
             except subprocess.CalledProcessError as e:
                 print(f"   [Error] Whisper failed for {media_file.name}: {e}", file=sys.stderr, flush=True)
