@@ -115,6 +115,9 @@ All original scripts have been enhanced to be safe, fast, and configurable from 
   * Adjust CRF quality (default: `28`) and speed preset (`fast`, `medium`, `slow`).
   * Non-interactive execution: bypasses terminal confirmation prompts automatically.
   * Generates an extensive side-by-side CSV compression report.
+  * **Safe Interruption & Resume**:
+    * Encodes to a `.part.mp4` temporary file first; only verified, completed videos are renamed to `.mp4`.
+    * If the laptop shuts down or the script is stopped, any incomplete file is detected via duration verification, removed, and re-encoded cleanly from scratch on the next run.
 
 ### Video Duration Calculator (`video_duration.py`)
 * **Features in UI**:

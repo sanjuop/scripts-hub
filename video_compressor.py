@@ -885,6 +885,13 @@ def main():
         exist_ok=True,
     )
 
+    # Clean up leftover .part.mp4 files from aborted sessions
+    for orphan in output_dir.rglob("*.part.mp4"):
+        try:
+            orphan.unlink()
+        except Exception:
+            pass
+
     # --------------------------------------------------------
     # FIND VIDEOS
     # --------------------------------------------------------
@@ -1040,77 +1047,55 @@ def main():
         # SKIP EXISTING
         # ----------------------------------------------------
 
-        if output_file.exists():
-
-            print(
-                "[DONE] Compressed file "
-                "already exists."
-            )
-
-            print(
-                "Skipping..."
-            )
-
-            # -----------------------------------------------
-            # IMPORTANT:
-            # Inspect BOTH existing files
-            # -----------------------------------------------
-
+        part_file = output_file.with_name(output_file.stem + ".part.mp4")
+        if part_file.exists():
             try:
+                part_file.unlink()
+            except Exception:
+                pass
 
-                original_info = (
-                    get_video_info(
-                        input_file
+        if output_file.exists():
+            # Verify file integrity and complete duration before skipping
+            is_valid = False
+            try:
+                original_info = get_video_info(input_file)
+                compressed_info = get_video_info(output_file)
+                compressed_size = output_file.stat().st_size
+
+                orig_dur = float(original_info.get("duration", 0) or 0)
+                comp_dur = float(compressed_info.get("duration", 0) or 0)
+
+                # Duration must match within 3.0s tolerance and size must be valid
+                if comp_dur > 0 and abs(comp_dur - orig_dur) <= 3.0 and compressed_size > 1024:
+                    is_valid = True
+            except Exception:
+                is_valid = False
+
+            if is_valid:
+                print("[DONE] Verified compressed file already exists. Skipping...")
+                try:
+                    row = create_report_row(
+                        input_file,
+                        output_file,
+                        original_info,
+                        compressed_info,
+                        original_size,
+                        compressed_size,
+                        datetime.fromtimestamp(output_file.stat().st_mtime),
+                        datetime.fromtimestamp(output_file.stat().st_mtime),
+                        0,
+                        "Already exists - skipped",
                     )
-                )
-
-                compressed_info = (
-                    get_video_info(
-                        output_file
-                    )
-                )
-
-                compressed_size = (
-                    output_file.stat().st_size
-                )
-
-                row = create_report_row(
-
-                    input_file,
-
-                    output_file,
-
-                    original_info,
-
-                    compressed_info,
-
-                    original_size,
-
-                    compressed_size,
-
-                    datetime.fromtimestamp(
-                        output_file.stat().st_mtime
-                    ),
-
-                    datetime.fromtimestamp(
-                        output_file.stat().st_mtime
-                    ),
-
-                    0,
-
-                    "Already exists - skipped",
-                )
-
-                report.append(row)
-
-            except Exception as error:
-
-                print(
-                    f"Could not inspect "
-                    f"existing file: {error}"
-                )
-
-            continue
+                    report.append(row)
+                except Exception:
+                    pass
+                continue
+            else:
+                print("[Notice] Incomplete or corrupted previous conversion detected. Re-encoding from scratch...")
+                try:
+                    output_file.unlink()
+                except Exception:
+                    pass
 
         # ----------------------------------------------------
         # GET ORIGINAL INFO
@@ -1173,61 +1158,35 @@ def main():
             # COMPRESS
             # ------------------------------------------------
 
+            # Encode to temporary part file
             compress_video(
-
                 input_file,
-
-                output_file,
-
+                part_file,
                 convert_4k,
             )
 
-            # ------------------------------------------------
-            # END
-            # ------------------------------------------------
+            end_counter = time.perf_counter()
+            end_time = datetime.now()
+            conversion_seconds = end_counter - start_counter
 
-            end_counter = (
-                time.perf_counter()
-            )
-
-            end_time = (
-                datetime.now()
-            )
-
-            conversion_seconds = (
-                end_counter
-                -
-                start_counter
-            )
-
-            # ------------------------------------------------
-            # VERIFY
-            # ------------------------------------------------
-
-            if not output_file.exists():
-
-                raise RuntimeError(
-                    "Output file was not created."
-                )
-
-            compressed_size = (
-                output_file.stat().st_size
-            )
-
-            # ------------------------------------------------
-            # INSPECT COMPRESSED FILE
-            # ------------------------------------------------
+            if not part_file.exists():
+                raise RuntimeError("Temporary output file was not created.")
 
             print()
-            print(
-                "Inspecting compressed file..."
-            )
+            print("Verifying compressed video integrity...")
+            compressed_info = get_video_info(part_file)
+            comp_dur = float(compressed_info.get("duration", 0) or 0)
+            orig_dur = float(original_info.get("duration", 0) or 0)
 
-            compressed_info = (
-                get_video_info(
-                    output_file
-                )
-            )
+            if comp_dur <= 0 or (orig_dur > 0 and abs(comp_dur - orig_dur) > 3.0):
+                part_file.unlink()
+                raise RuntimeError(f"Integrity check failed: duration mismatch (Original: {orig_dur:.1f}s, Encoded: {comp_dur:.1f}s). File deleted.")
+
+            # Atomically promote temporary file to final output
+            if output_file.exists():
+                output_file.unlink()
+            part_file.replace(output_file)
+            compressed_size = output_file.stat().st_size
 
             # ------------------------------------------------
             # DISPLAY
