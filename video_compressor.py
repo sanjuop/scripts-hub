@@ -3,6 +3,12 @@ import json
 import subprocess
 import argparse
 import sys
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 import time
 from datetime import datetime
 from pathlib import Path
@@ -1037,7 +1043,7 @@ def main():
         if output_file.exists():
 
             print(
-                "✓ Compressed file "
+                "[DONE] Compressed file "
                 "already exists."
             )
 
@@ -1239,7 +1245,7 @@ def main():
             )
 
             print()
-            print("✓ DONE")
+            print("[DONE]")
 
             print(
                 f"Original   : "
@@ -1310,7 +1316,7 @@ def main():
 
             print()
             print(
-                "✗ ERROR"
+                "[ERROR]"
             )
 
             print(error)

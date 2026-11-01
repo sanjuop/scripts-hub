@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from PySide6.QtCore import QObject, QProcess, Signal
+from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 
 
 class TaskInstance:
@@ -80,12 +80,22 @@ class ProcessManager(QObject):
         if not full_script_path.exists():
             raise FileNotFoundError(f"Script file not found: {full_script_path}")
 
-        # Choose Python interpreter
+        # Choose Python interpreter: prefer standard python.exe over pythonw.exe for worker streams
         python_exe = sys.executable
+        if sys.platform == "win32" and "pythonw.exe" in python_exe.lower():
+            cli_python = Path(python_exe).parent / "python.exe"
+            if cli_python.exists():
+                python_exe = str(cli_python)
 
         # Set up QProcess
         process = QProcess(self)
         process.setProgram(python_exe)
+
+        # Configure process environment for UTF-8 standard streams
+        env = QProcessEnvironment.systemEnvironment()
+        env.insert("PYTHONIOENCODING", "utf-8")
+        env.insert("PYTHONUTF8", "1")
+        process.setProcessEnvironment(env)
         # Use -u for unbuffered Python standard output
         process_args = ["-u", str(full_script_path)] + param_args
         process.setArguments(process_args)

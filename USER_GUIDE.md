@@ -222,3 +222,9 @@ All 8 original scripts were preserved in their exact pre-modification state befo
   * `video_duration.py`
   * `whisper_to_otio.py`
 
+---
+
+## 8. UTF-8 & Special Character Encoding Support
+
+All scripts and the Scripts Hub process launcher are configured to use UTF-8 output streams (`PYTHONIOENCODING=utf-8` and `sys.stdout.reconfigure(encoding="utf-8", errors="replace")`). File paths, course titles, or disk filenames containing special characters, smart quotes, dashes, accents, or non-English characters will print cleanly to the terminal without causing `UnicodeEncodeError`.
+
