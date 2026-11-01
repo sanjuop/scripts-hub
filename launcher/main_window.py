@@ -282,6 +282,8 @@ class MainWindow(QMainWindow):
         console_box.addLayout(console_header)
 
         self.tabs_console = QTabWidget()
+        self.tabs_console.setTabsClosable(True)
+        self.tabs_console.tabCloseRequested.connect(self._on_tab_close_requested)
         console_box.addWidget(self.tabs_console)
 
         # Stdin Input Row
@@ -579,23 +581,29 @@ class MainWindow(QMainWindow):
 
         return args
 
+    def _get_tab_for_script(self, script_id: str):
+        for idx in range(self.tabs_console.count()):
+            w = self.tabs_console.widget(idx)
+            if w and w.property("script_id") == script_id:
+                return idx
+        return None
+
     def _ensure_console_tab(self, script_info: Dict):
         script_id = script_info.get("id")
         tab_name = script_info.get("name", script_id)
 
-        # Check if tab exists
-        for idx in range(self.tabs_console.count()):
-            if self.tabs_console.tabText(idx).startswith(tab_name):
-                self.tabs_console.setCurrentIndex(idx)
-                return
+        idx = self._get_tab_for_script(script_id)
+        if idx is not None:
+            self.tabs_console.setCurrentIndex(idx)
+            return
 
-        # Create new console tab
+        # Create single dedicated console tab for this script
         editor = QPlainTextEdit()
         editor.setReadOnly(True)
+        editor.setProperty("script_id", script_id)
         editor.appendPlainText(f"[Ready] Selected '{tab_name}'. Click 'Run Script' to begin.")
-        self.tabs_console.addTab(editor, tab_name)
-        self.tabs_console.setCurrentWidget(editor)
-        self.console_tabs[script_id] = editor
+        new_idx = self.tabs_console.addTab(editor, tab_name)
+        self.tabs_console.setCurrentIndex(new_idx)
 
     def _run_current_script(self):
         if not self.current_script_id:
@@ -698,16 +706,38 @@ class MainWindow(QMainWindow):
             QGuiApplication.clipboard().setText(current_widget.toPlainText())
             self.statusBar().showMessage("Logs copied to clipboard.", 2000)
 
+    def _on_tab_close_requested(self, index: int):
+        widget = self.tabs_console.widget(index)
+        if not widget:
+            return
+        script_id = widget.property("script_id")
+        if script_id and self.process_manager.is_script_running(script_id):
+            QMessageBox.information(
+                self,
+                "Task Running",
+                "This script is currently executing. Please stop it before closing its tab."
+            )
+            return
+        self.tabs_console.removeTab(index)
+
     def _on_task_started(self, task_id: str, script_id: str):
         script_info = self.manifest.get_script_by_id(script_id)
         name = script_info.get("name", script_id) if script_info else script_id
-
-        # Create or focus tab
         tab_label = f"▶ {name}"
-        editor = QPlainTextEdit()
-        editor.setReadOnly(True)
-        idx = self.tabs_console.addTab(editor, tab_label)
-        self.tabs_console.setCurrentIndex(idx)
+
+        # Reuse existing tab for this script if present
+        idx = self._get_tab_for_script(script_id)
+        if idx is not None:
+            editor = self.tabs_console.widget(idx)
+            self.tabs_console.setTabText(idx, tab_label)
+            self.tabs_console.setCurrentIndex(idx)
+        else:
+            editor = QPlainTextEdit()
+            editor.setReadOnly(True)
+            editor.setProperty("script_id", script_id)
+            new_idx = self.tabs_console.addTab(editor, tab_label)
+            self.tabs_console.setCurrentIndex(new_idx)
+
         self.console_tabs[task_id] = editor
 
         if self.current_script_id == script_id:
