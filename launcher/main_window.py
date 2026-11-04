@@ -254,22 +254,44 @@ class MainWindow(QMainWindow):
         action_row.addStretch()
         content_layout.addLayout(action_row)
 
-        # Parameters Scroll Area
+        # Vertical Splitter separating Parameters and Terminal Output
+        self.right_splitter = QSplitter(Qt.Vertical)
+        self.right_splitter.setChildrenCollapsible(False)
+
+        # Upper Section: Parameters
+        params_section = QWidget()
+        params_section_layout = QVBoxLayout(params_section)
+        params_section_layout.setContentsMargins(0, 0, 0, 0)
+        params_section_layout.setSpacing(6)
+
+        lbl_params_title = QLabel("Script Parameters & Options")
+        lbl_params_title.setStyleSheet("font-weight: bold; color: #7aa2f7; font-size: 13px; padding-top: 2px;")
+        params_section_layout.addWidget(lbl_params_title)
+
         self.scroll_params = QScrollArea()
         self.scroll_params.setWidgetResizable(True)
-        self.scroll_params.setMaximumHeight(200)
+        self.scroll_params.setMinimumHeight(160)
         self.scroll_params.setStyleSheet("background: #1a1b26; border: 1px solid #24283b; border-radius: 6px;")
         self.params_container = QWidget()
         self.params_layout = QFormLayout(self.params_container)
-        self.params_layout.setContentsMargins(12, 10, 12, 10)
+        self.params_layout.setContentsMargins(16, 14, 16, 14)
+        self.params_layout.setVerticalSpacing(14)
+        self.params_layout.setHorizontalSpacing(18)
+        self.params_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.scroll_params.setWidget(self.params_container)
-        content_layout.addWidget(self.scroll_params)
+        params_section_layout.addWidget(self.scroll_params)
 
-        # Tabbed Output Console
-        console_box = QVBoxLayout()
+        self.right_splitter.addWidget(params_section)
+
+        # Lower Section: Tabbed Output Console
+        console_widget = QWidget()
+        console_box = QVBoxLayout(console_widget)
+        console_box.setContentsMargins(0, 4, 0, 0)
+        console_box.setSpacing(6)
+
         console_header = QHBoxLayout()
         lbl_console_title = QLabel("Terminal Output")
-        lbl_console_title.setStyleSheet("font-weight: bold; color: #7aa2f7; font-size: 12px;")
+        lbl_console_title.setStyleSheet("font-weight: bold; color: #7aa2f7; font-size: 13px;")
         console_header.addWidget(lbl_console_title)
         console_header.addStretch()
 
@@ -297,7 +319,12 @@ class MainWindow(QMainWindow):
         stdin_row.addWidget(self.btn_send_stdin)
         console_box.addLayout(stdin_row)
 
-        content_layout.addLayout(console_box)
+        self.right_splitter.addWidget(console_widget)
+
+        # Set generous initial splitter proportions (250px params, 320px console)
+        self.right_splitter.setSizes([250, 320])
+
+        content_layout.addWidget(self.right_splitter, 1)
 
         splitter.addWidget(content_area)
         splitter.setStretchFactor(1, 4)
@@ -361,7 +388,8 @@ class MainWindow(QMainWindow):
         query = self.search_bar.text().strip().lower()
         selected_cat = self.combo_category.currentText()
 
-        for s in self.manifest.get_scripts():
+        scripts = sorted(self.manifest.get_scripts(), key=lambda s: s.get('name', '').lower())
+        for s in scripts:
             name = s.get("name", "")
             cat = s.get("category", "")
             script_id = s.get("id", "")
@@ -458,9 +486,15 @@ class MainWindow(QMainWindow):
         params = script_info.get("parameters", [])
         if not params:
             lbl_none = QLabel("No configuration parameters required for this script.")
-            lbl_none.setStyleSheet("color: #565f89; font-style: italic;")
+            lbl_none.setStyleSheet("color: #787c99; font-style: italic; font-size: 13px; padding: 8px 0;")
             self.params_layout.addRow(lbl_none)
             return
+
+        def make_label(text: str) -> QLabel:
+            lbl = QLabel(f"{text}:")
+            lbl.setStyleSheet("color: #c0caf5; font-size: 13px; font-weight: 600;")
+            lbl.setMinimumWidth(150)
+            return lbl
 
         for p in params:
             name = p.get("name")
@@ -475,7 +509,7 @@ class MainWindow(QMainWindow):
                 btn.clicked.connect(lambda _, e=edit: self._browse_dir(e))
                 row.addWidget(edit)
                 row.addWidget(btn)
-                self.params_layout.addRow(f"{label}:", row)
+                self.params_layout.addRow(make_label(label), row)
                 self.param_widgets[name] = edit
 
             elif p_type == "file":
@@ -485,7 +519,17 @@ class MainWindow(QMainWindow):
                 btn.clicked.connect(lambda _, e=edit: self._browse_file(e))
                 row.addWidget(edit)
                 row.addWidget(btn)
-                self.params_layout.addRow(f"{label}:", row)
+                self.params_layout.addRow(make_label(label), row)
+                self.param_widgets[name] = edit
+
+            elif p_type == "save_file":
+                row = QHBoxLayout()
+                edit = QLineEdit(str(default or ""))
+                btn = QPushButton("Browse...")
+                btn.clicked.connect(lambda _, e=edit: self._browse_save_file(e))
+                row.addWidget(edit)
+                row.addWidget(btn)
+                self.params_layout.addRow(make_label(label), row)
                 self.param_widgets[name] = edit
 
             elif p_type == "choice":
@@ -493,7 +537,7 @@ class MainWindow(QMainWindow):
                 combo.addItems(p.get("options", []))
                 if default in p.get("options", []):
                     combo.setCurrentText(str(default))
-                self.params_layout.addRow(f"{label}:", combo)
+                self.params_layout.addRow(make_label(label), combo)
                 self.param_widgets[name] = combo
 
             elif p_type == "multi_choice":
@@ -509,27 +553,27 @@ class MainWindow(QMainWindow):
                     h.addWidget(chk)
                     checkboxes.append((opt, chk))
                 h.addStretch()
-                self.params_layout.addRow(f"{label}:", box)
+                self.params_layout.addRow(make_label(label), box)
                 self.param_widgets[name] = checkboxes
 
             elif p_type == "bool":
                 chk = QCheckBox()
                 chk.setChecked(bool(default))
-                self.params_layout.addRow(f"{label}:", chk)
+                self.params_layout.addRow(make_label(label), chk)
                 self.param_widgets[name] = chk
 
             elif p_type == "int":
                 spin = QSpinBox()
                 spin.setRange(p.get("min", 0), p.get("max", 999999))
                 spin.setValue(int(default or 0))
-                self.params_layout.addRow(f"{label}:", spin)
+                self.params_layout.addRow(make_label(label), spin)
                 self.param_widgets[name] = spin
 
             else:  # Text input
                 edit = QLineEdit(str(default or ""))
                 if p.get("placeholder"):
                     edit.setPlaceholderText(p.get("placeholder"))
-                self.params_layout.addRow(f"{label}:", edit)
+                self.params_layout.addRow(make_label(label), edit)
                 self.param_widgets[name] = edit
 
     def _browse_dir(self, line_edit: QLineEdit):
@@ -539,6 +583,16 @@ class MainWindow(QMainWindow):
 
     def _browse_file(self, line_edit: QLineEdit):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File", line_edit.text() or str(self.scripts_dir))
+        if file_path:
+            line_edit.setText(file_path)
+
+    def _browse_save_file(self, line_edit: QLineEdit):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save CSV Output",
+            line_edit.text() or str(self.scripts_dir / "scraped_listings.csv"),
+            "CSV Files (*.csv);;All Files (*.*)"
+        )
         if file_path:
             line_edit.setText(file_path)
 
@@ -554,7 +608,7 @@ class MainWindow(QMainWindow):
             if not widget or not flag:
                 continue
 
-            if p_type in ("directory", "file", "text"):
+            if p_type in ("directory", "file", "save_file", "text"):
                 val = widget.text().strip()
                 if val:
                     args.extend([flag, val])
@@ -801,8 +855,17 @@ class MainWindow(QMainWindow):
 
     def show_and_activate(self):
         self.show()
-        self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+        self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.raise_()
         self.activateWindow()
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                hwnd = int(self.winId())
+                ctypes.windll.user32.ShowWindow(hwnd, 9)  # SW_RESTORE = 9
+                ctypes.windll.user32.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
 
     def closeEvent(self, event):
         """Minimize to tray on window close if enabled."""
@@ -830,6 +893,12 @@ class MainWindow(QMainWindow):
             )
             if res != QMessageBox.Yes:
                 return
+
+        if hasattr(self, "_ipc_server") and self._ipc_server:
+            try:
+                self._ipc_server.close()
+            except Exception:
+                pass
 
         self.process_manager.stop_all_tasks()
         self.tray_icon.hide()

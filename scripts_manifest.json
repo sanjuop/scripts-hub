@@ -4,184 +4,33 @@
     "All Scripts",
     "Media & Video",
     "Disk & Backup",
-    "Automation & Keep-Awake"
+    "Automation & Keep-Awake",
+    "Web & Scraping"
   ],
   "scripts": [
     {
-      "id": "self_timer",
-      "name": "Self Timer (Keep-Alive)",
-      "category": "Automation & Keep-Awake",
-      "description": "Prevents screen sleep, screensaver, and idle lock with 0% CPU usage. Visibly moves cursor across screen or nudges it in place.",
-      "script_file": "self_timer.py",
+      "id": "directory_inventory",
+      "name": "Directory Inventory",
+      "category": "Disk & Backup",
+      "description": "Generates a clean text file indexing all files and paths recursively in a folder.",
+      "script_file": "directory_inventory.py",
       "interpreter": "auto",
       "dependencies": [],
       "parameters": [
         {
-          "name": "mode",
-          "flag": "--mode",
-          "type": "choice",
-          "label": "Movement Mode",
-          "options": ["random", "wiggle", "stealth"],
-          "default": "random",
-          "help": "Random (jumps across screen), Wiggle (moves back and forth in place), Stealth (no cursor movement)"
+          "name": "source",
+          "flag": "--source",
+          "type": "directory",
+          "label": "Directory to Index",
+          "default": "D:\\Editing\\film-editing-pro-the-art-of-drama-editing\\Film Editing Pro - The Art Of Drama Editing\\The Artor Drama Eiting PrO Dowloads\\Footage"
         },
         {
-          "name": "interval",
-          "flag": "--interval",
-          "type": "int",
-          "label": "Pulse Interval (seconds)",
-          "default": 30,
-          "min": 1,
-          "max": 3600
-        },
-        {
-          "name": "duration",
-          "flag": "--duration",
-          "type": "int",
-          "label": "Run Duration (minutes, 0 = indefinite)",
-          "default": 0,
-          "min": 0,
-          "max": 1440
-        },
-        {
-          "name": "until",
-          "flag": "--until",
+          "name": "output",
+          "flag": "--output",
           "type": "text",
-          "label": "Stop At Time (HH:MM:SS, optional)",
+          "label": "Output Text File (optional)",
           "default": "",
-          "placeholder": "e.g. 19:30:00"
-        }
-      ]
-    },
-    {
-      "id": "whisper_transcriber",
-      "name": "Whisper Transcriber",
-      "category": "Media & Video",
-      "description": "Batch transcribes videos using OpenAI Whisper. Configure output formats (JSON word timestamps, SRT, TXT) and model on the fly.",
-      "script_file": "ffmpeg.py",
-      "interpreter": "auto",
-      "dependencies": ["whisper"],
-      "parameters": [
-        {
-          "name": "dir",
-          "flag": "--dir",
-          "type": "directory",
-          "label": "Target Media Folder",
-          "default": "D:\\Lighting\\Tom_Noske_Video_Creator Academy_MP4\\3_Mastering_Scene_Creation_[Practical_Lessons]"
-        },
-        {
-          "name": "formats",
-          "flag": "--formats",
-          "type": "multi_choice",
-          "label": "Output Formats",
-          "options": ["json", "srt", "txt", "vtt"],
-          "default": ["json"]
-        },
-        {
-          "name": "model",
-          "flag": "--model",
-          "type": "choice",
-          "label": "Whisper Model Size",
-          "options": ["tiny", "base", "small", "medium", "large-v3", "turbo"],
-          "default": "tiny"
-        },
-        {
-          "name": "language",
-          "flag": "--language",
-          "type": "text",
-          "label": "Audio Language",
-          "default": "English"
-        },
-        {
-          "name": "task",
-          "flag": "--task",
-          "type": "choice",
-          "label": "Task",
-          "options": ["transcribe", "translate"],
-          "default": "transcribe"
-        },
-        {
-          "name": "skip_existing",
-          "flag": "--skip-existing",
-          "type": "bool",
-          "label": "Skip if transcripts already exist",
-          "default": true
-        },
-        {
-          "name": "extra_args",
-          "flag": "--extra-args",
-          "type": "text",
-          "label": "Advanced Flags (optional)",
-          "default": "",
-          "placeholder": "e.g. --device cuda"
-        }
-      ]
-    },
-    {
-      "id": "video_compressor",
-      "name": "Video Compressor",
-      "category": "Media & Video",
-      "description": "Batch compresses tutorial videos to HEVC (H.265) with CRF rate control and outputs a detailed CSV comparison report.",
-      "script_file": "video_compressor.py",
-      "interpreter": "auto",
-      "dependencies": ["ffmpeg", "ffprobe"],
-      "parameters": [
-        {
-          "name": "input",
-          "flag": "--input",
-          "type": "directory",
-          "label": "Course Video Folder",
-          "default": ""
-        },
-        {
-          "name": "mode",
-          "flag": "--mode",
-          "type": "choice",
-          "label": "4K Video Handling",
-          "options": ["1080p", "original"],
-          "default": "1080p"
-        },
-        {
-          "name": "crf",
-          "flag": "--crf",
-          "type": "int",
-          "label": "CRF Quality (24-32, default 28)",
-          "default": 28,
-          "min": 18,
-          "max": 36
-        },
-        {
-          "name": "preset",
-          "flag": "--preset",
-          "type": "choice",
-          "label": "Preset (Speed vs Compression)",
-          "options": ["fast", "medium", "slow"],
-          "default": "medium"
-        },
-        {
-          "name": "yes",
-          "flag": "--yes",
-          "type": "bool",
-          "label": "Skip Terminal Confirmation",
-          "default": true
-        }
-      ]
-    },
-    {
-      "id": "video_duration",
-      "name": "Video Duration Calculator",
-      "category": "Media & Video",
-      "description": "Scans video files recursively and displays individual video playback lengths and total watch time.",
-      "script_file": "video_duration.py",
-      "interpreter": "auto",
-      "dependencies": ["ffprobe"],
-      "parameters": [
-        {
-          "name": "path",
-          "flag": "--path",
-          "type": "directory",
-          "label": "Target Video Folder",
-          "default": "D:\\Lighting\\Tom Noske - Video Creator Academy - MP4"
+          "placeholder": "Leave blank for file_inventory.txt in source folder"
         }
       ]
     },
@@ -192,7 +41,9 @@
       "description": "Inspects audio/video streams, bitrates, resolutions, frame rates, and exports a comprehensive technical CSV sheet.",
       "script_file": "fileSize.py",
       "interpreter": "auto",
-      "dependencies": ["ffprobe"],
+      "dependencies": [
+        "ffprobe"
+      ],
       "parameters": [
         {
           "name": "path",
@@ -251,31 +102,278 @@
       ]
     },
     {
-      "id": "directory_inventory",
-      "name": "Directory Inventory",
-      "category": "Disk & Backup",
-      "description": "Generates a clean text file indexing all files and paths recursively in a folder.",
-      "script_file": "directory_inventory.py",
+      "id": "self_timer",
+      "name": "Self Timer (Keep-Alive)",
+      "category": "Automation & Keep-Awake",
+      "description": "Prevents screen sleep, screensaver, and idle lock with 0% CPU usage. Visibly moves cursor across screen or nudges it in place.",
+      "script_file": "self_timer.py",
       "interpreter": "auto",
       "dependencies": [],
       "parameters": [
         {
-          "name": "source",
-          "flag": "--source",
+          "name": "mode",
+          "flag": "--mode",
+          "type": "choice",
+          "label": "Movement Mode",
+          "options": [
+            "random",
+            "wiggle",
+            "stealth"
+          ],
+          "default": "random",
+          "help": "Random (jumps across screen), Wiggle (moves back and forth in place), Stealth (no cursor movement)"
+        },
+        {
+          "name": "interval",
+          "flag": "--interval",
+          "type": "int",
+          "label": "Pulse Interval (seconds)",
+          "default": 30,
+          "min": 1,
+          "max": 3600
+        },
+        {
+          "name": "duration",
+          "flag": "--duration",
+          "type": "int",
+          "label": "Run Duration (minutes, 0 = indefinite)",
+          "default": 0,
+          "min": 0,
+          "max": 1440
+        },
+        {
+          "name": "until",
+          "flag": "--until",
+          "type": "text",
+          "label": "Stop At Time (HH:MM:SS, optional)",
+          "default": "",
+          "placeholder": "e.g. 19:30:00"
+        }
+      ]
+    },
+    {
+      "id": "video_compressor",
+      "name": "Video Compressor",
+      "category": "Media & Video",
+      "description": "Batch compresses tutorial videos to HEVC (H.265) with CRF rate control and outputs a detailed CSV comparison report.",
+      "script_file": "video_compressor.py",
+      "interpreter": "auto",
+      "dependencies": [
+        "ffmpeg",
+        "ffprobe"
+      ],
+      "parameters": [
+        {
+          "name": "input",
+          "flag": "--input",
           "type": "directory",
-          "label": "Directory to Index",
-          "default": "D:\\Editing\\film-editing-pro-the-art-of-drama-editing\\Film Editing Pro - The Art Of Drama Editing\\The Artor Drama Eiting PrO Dowloads\\Footage"
+          "label": "Course Video Folder",
+          "default": ""
+        },
+        {
+          "name": "mode",
+          "flag": "--mode",
+          "type": "choice",
+          "label": "4K Video Handling",
+          "options": [
+            "1080p",
+            "original"
+          ],
+          "default": "1080p"
+        },
+        {
+          "name": "crf",
+          "flag": "--crf",
+          "type": "int",
+          "label": "CRF Quality (24-32, default 28)",
+          "default": 28,
+          "min": 18,
+          "max": 36
+        },
+        {
+          "name": "preset",
+          "flag": "--preset",
+          "type": "choice",
+          "label": "Preset (Speed vs Compression)",
+          "options": [
+            "fast",
+            "medium",
+            "slow"
+          ],
+          "default": "medium"
+        },
+        {
+          "name": "yes",
+          "flag": "--yes",
+          "type": "bool",
+          "label": "Skip Terminal Confirmation",
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "video_duration",
+      "name": "Video Duration Calculator",
+      "category": "Media & Video",
+      "description": "Scans video files recursively and displays individual video playback lengths and total watch time.",
+      "script_file": "video_duration.py",
+      "interpreter": "auto",
+      "dependencies": [
+        "ffprobe"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "flag": "--path",
+          "type": "directory",
+          "label": "Target Video Folder",
+          "default": "D:\\Lighting\\Tom Noske - Video Creator Academy - MP4"
+        }
+      ]
+    },
+    {
+      "id": "psdly_scraper",
+      "name": "Web Listing Scraper (PSDLY & Custom)",
+      "category": "Web & Scraping",
+      "description": "Universal listing scraper for PSDLY and content websites. Extracts article/course titles, links, and pages into CSV with live progress.",
+      "script_file": "psdly.py",
+      "interpreter": "auto",
+      "dependencies": [],
+      "parameters": [
+        {
+          "name": "url",
+          "flag": "--url",
+          "type": "text",
+          "label": "Target Website URL",
+          "default": "https://www.psdly.site/ai-courses/",
+          "placeholder": "e.g. https://www.psdly.site/ai-courses/"
         },
         {
           "name": "output",
           "flag": "--output",
+          "type": "save_file",
+          "label": "Output CSV File",
+          "default": "D:\\Scripts\\scraped_listings.csv",
+          "placeholder": "Choose where to save the CSV"
+        },
+        {
+          "name": "max_pages",
+          "flag": "--max-pages",
+          "type": "int",
+          "label": "Max Pages (0 = all pages)",
+          "default": 0,
+          "min": 0,
+          "max": 9999
+        },
+        {
+          "name": "delay",
+          "flag": "--delay",
+          "type": "int",
+          "label": "Request Delay (seconds)",
+          "default": 1,
+          "min": 0,
+          "max": 60
+        },
+        {
+          "name": "keyword",
+          "flag": "--keyword",
           "type": "text",
-          "label": "Output Text File (optional)",
+          "label": "Keyword Filter (optional)",
           "default": "",
-          "placeholder": "Leave blank for file_inventory.txt in source folder"
+          "placeholder": "e.g. Blender, Python, ComfyUI"
+        },
+        {
+          "name": "selector",
+          "flag": "--selector",
+          "type": "text",
+          "label": "Custom CSS Selector (optional)",
+          "default": "",
+          "placeholder": "Leave blank for auto-detection"
+        }
+      ]
+    },
+    {
+      "id": "whisper_transcriber",
+      "name": "Whisper Transcriber",
+      "category": "Media & Video",
+      "description": "Batch transcribes videos using OpenAI Whisper. Configure output formats (JSON word timestamps, SRT, TXT) and model on the fly.",
+      "script_file": "ffmpeg.py",
+      "interpreter": "auto",
+      "dependencies": [
+        "whisper"
+      ],
+      "parameters": [
+        {
+          "name": "dir",
+          "flag": "--dir",
+          "type": "directory",
+          "label": "Target Media Folder",
+          "default": "D:\\Lighting\\Tom_Noske_Video_Creator Academy_MP4\\3_Mastering_Scene_Creation_[Practical_Lessons]"
+        },
+        {
+          "name": "formats",
+          "flag": "--formats",
+          "type": "multi_choice",
+          "label": "Output Formats",
+          "options": [
+            "json",
+            "srt",
+            "txt",
+            "vtt"
+          ],
+          "default": [
+            "json"
+          ]
+        },
+        {
+          "name": "model",
+          "flag": "--model",
+          "type": "choice",
+          "label": "Whisper Model Size",
+          "options": [
+            "tiny",
+            "base",
+            "small",
+            "medium",
+            "large-v3",
+            "turbo"
+          ],
+          "default": "tiny"
+        },
+        {
+          "name": "language",
+          "flag": "--language",
+          "type": "text",
+          "label": "Audio Language",
+          "default": "English"
+        },
+        {
+          "name": "task",
+          "flag": "--task",
+          "type": "choice",
+          "label": "Task",
+          "options": [
+            "transcribe",
+            "translate"
+          ],
+          "default": "transcribe"
+        },
+        {
+          "name": "skip_existing",
+          "flag": "--skip-existing",
+          "type": "bool",
+          "label": "Skip if transcripts already exist",
+          "default": true
+        },
+        {
+          "name": "extra_args",
+          "flag": "--extra-args",
+          "type": "text",
+          "label": "Advanced Flags (optional)",
+          "default": "",
+          "placeholder": "e.g. --device cuda"
         }
       ]
     }
   ]
 }
-

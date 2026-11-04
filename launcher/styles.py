@@ -48,6 +48,23 @@ QScrollBar::handle:horizontal:hover {
     background: #414868;
 }
 
+/* Splitter */
+QSplitter::handle {
+    background-color: #24283b;
+    border-radius: 2px;
+}
+QSplitter::handle:vertical {
+    height: 6px;
+    margin: 3px 0px;
+}
+QSplitter::handle:horizontal {
+    width: 6px;
+    margin: 0px 3px;
+}
+QSplitter::handle:hover {
+    background-color: #7aa2f7;
+}
+
 /* Sidebar & Containers */
 #sidebar {
     background-color: #1a1b26;

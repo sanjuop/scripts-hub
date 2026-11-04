@@ -142,6 +142,15 @@ All original scripts have been enhanced to be safe, fast, and configurable from 
   * Indexes all files in a folder recursively into a plain text file.
   * Displays total file count and total folder size in MB/GB.
 
+### Web Listing Scraper (`psdly.py`)
+* **Features in UI**:
+  * **Target Website URL**: Scrapes any PSDLY category or other website catalog (e.g. `https://www.psdly.site/ai-courses/`, `https://www.psdly.site/tutorials/`).
+  * **Output CSV Location**: Click **Browse...** to save the resulting CSV anywhere on your computer (Desktop, downloads, or external drive). Defaults to `D:\Scripts\scraped_listings.csv`.
+  * **Max Pages Limit**: Scrape all pages (`0`) or limit to e.g. `1`, `5`, or `10` pages.
+  * **Keyword Filter**: Optional text filter (e.g. `Blender`, `Python`) to only export items matching your keywords.
+  * **Custom Selector**: Optional CSS selector override for non-standard websites (leave blank for automatic smart detection).
+  * **Richer Metadata**: Exports `title`, `url`, `page_discovered`, and `scraped_at` timestamp with Excel-ready `utf-8-sig` encoding.
+
 ---
 
 ## 5. Automatic Windows Startup & System Tray
