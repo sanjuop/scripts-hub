@@ -366,6 +366,21 @@
           "default": true
         },
         {
+          "name": "recursive",
+          "flag": "--recursive",
+          "inverted_flag": "--no-recursive",
+          "type": "bool",
+          "label": "Scan All Subfolders Recursively",
+          "default": true
+        },
+        {
+          "name": "shutdown",
+          "flag": "--shutdown",
+          "type": "bool",
+          "label": "Shutdown PC when finished",
+          "default": false
+        },
+        {
           "name": "extra_args",
           "flag": "--extra-args",
           "type": "text",

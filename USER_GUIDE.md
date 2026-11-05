@@ -102,7 +102,10 @@ All original scripts have been enhanced to be safe, fast, and configurable from 
   * **Output Formats**: Select any combination of checkboxes: `JSON (word timestamps)`, `SRT (subtitles)`, `TXT`, `VTT`.
   * **Model Selector**: Choose between `tiny`, `base`, `small`, `medium`, `large-v3`, or `turbo`.
   * **Task & Language**: Choose `Transcribe` or `Translate to English`, and set target audio language.
-  * **Skip Existing**: Automatically skips files that already have transcripts.
+  * **Skip Existing**: Automatically skips files that already have valid transcripts.
+  * **Recursive Subfolder Scanning**: Check `Scan All Subfolders Recursively` to automatically index and transcribe all nested folders (e.g., course chapters/modules) in a single run. Saves transcripts right next to each video in its respective subfolder.
+  * **Atomic Integrity & Resume Check**: Skips completed valid transcripts. Automatically detects and purges broken or 0-byte transcripts from interrupted runs so no files are skipped by mistake.
+  * **Auto PC Shutdown**: Check `Shutdown PC when finished` to safely power off the computer when the entire batch completes (with a 60-second warning countdown and `shutdown /a` abort option).
   * **Advanced Flags**: Text field to pass any custom Whisper CLI flags (e.g. `--device cuda`).
 * **How to Update Later**:
   * Click **`[ 📝 Edit Script ]`** in the UI to open `ffmpeg.py` in your code editor.

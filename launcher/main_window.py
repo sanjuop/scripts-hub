@@ -628,6 +628,8 @@ class MainWindow(QMainWindow):
             elif p_type == "bool":
                 if widget.isChecked():
                     args.append(flag)
+                elif p.get("inverted_flag"):
+                    args.append(p.get("inverted_flag"))
 
             elif p_type == "int":
                 val = widget.value()
