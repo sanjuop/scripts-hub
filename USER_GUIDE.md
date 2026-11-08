@@ -149,6 +149,7 @@ All original scripts have been enhanced to be safe, fast, and configurable from 
 * **Features in UI**:
   * **Target Website URL**: Scrapes any PSDLY category or other website catalog (e.g. `https://www.psdly.site/ai-courses/`, `https://www.psdly.site/tutorials/`).
   * **Output CSV Location**: Click **Browse...** to save the resulting CSV anywhere on your computer (Desktop, downloads, or external drive). Defaults to `D:\Scripts\scraped_listings.csv`.
+  * **Deep Extraction Mode**: Check `Extract Deep Details (Size, Date, Description)` to fetch **File Size** (e.g. `5.1 GB`), **Updated Date** (e.g. `October 14, 2026`), and **Description** summary into the CSV columns.
   * **Max Pages Limit**: Scrape all pages (`0`) or limit to e.g. `1`, `5`, or `10` pages.
   * **Keyword Filter**: Optional text filter (e.g. `Blender`, `Python`) to only export items matching your keywords.
   * **Custom Selector**: Optional CSS selector override for non-standard websites (leave blank for automatic smart detection).

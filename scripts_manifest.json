@@ -257,6 +257,13 @@
           "placeholder": "Choose where to save the CSV"
         },
         {
+          "name": "deep",
+          "flag": "--deep",
+          "type": "bool",
+          "label": "Extract Deep Details (Size, Date, Description)",
+          "default": true
+        },
+        {
           "name": "max_pages",
           "flag": "--max-pages",
           "type": "int",

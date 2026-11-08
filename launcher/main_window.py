@@ -425,6 +425,7 @@ class MainWindow(QMainWindow):
             return
         script_id = item.data(Qt.UserRole)
         self.current_script_id = script_id
+        self.manifest.load()
         script_info = self.manifest.get_script_by_id(script_id)
         if not script_info:
             return
