@@ -260,7 +260,7 @@
           "name": "deep",
           "flag": "--deep",
           "type": "bool",
-          "label": "Extract Deep Details (Size, Date, Description)",
+          "label": "Extract Deep Details (Source, Publisher, Size, Date, Description)",
           "default": true
         },
         {

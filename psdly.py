@@ -6,7 +6,7 @@ or any listing/blog website across paginated pages into a CSV file.
 Features:
 - Configurable target URL (--url)
 - Configurable destination CSV file (--output)
-- Deep extraction of File Size, Updated Date, and Description (--deep)
+- Deep extraction: Source URL, Publisher, File Size, Updated Date, and Description (--deep)
 - Real-time live auto-save (zero data loss if script is stopped)
 - Auto-resume & deduplication across multiple runs
 - Page limit control (--max-pages, 0 = all)
@@ -157,11 +157,15 @@ def extract_listings(
 def extract_deep_details(session: requests.Session, url: str) -> dict[str, str]:
     """
     Visits the item's detail page to extract rich metadata:
+    - Source: original platform/sales link (e.g. Udemy, Coursera)
+    - Publisher: author / creator / instructor
     - File size (e.g. 5.1 GB, 1.2 GB, 500 MB)
     - Updated / Published date
     - Description summary paragraph
     """
     details = {
+        "source": "N/A",
+        "publisher": "N/A",
         "file_size": "N/A",
         "updated_date": "N/A",
         "description": "N/A"
@@ -174,28 +178,57 @@ def extract_deep_details(session: requests.Session, url: str) -> dict[str, str]:
 
         d_soup = BeautifulSoup(resp.text, "html.parser")
 
-        # 1. Updated / Published Date
-        date_el = d_soup.select_one(".jeg_meta_date, time, .entry-date, .post-date, [class*='date']")
-        if date_el and date_el.get_text(strip=True):
-            details["updated_date"] = date_el.get_text(strip=True)
-        elif d_soup.find("time"):
-            t = d_soup.find("time")
-            details["updated_date"] = t.get("datetime") or t.get_text(strip=True)
+        # Priority 1: Direct extraction from PSDLY structured metadata tiles (.psdly-pc-tile)
+        for tile in d_soup.select(".psdly-pc-tile, [class*='psdly-pc']"):
+            lbl_el = tile.select_one(".psdly-pc-lbl")
+            val_el = tile.select_one(".psdly-pc-val")
+            if lbl_el and val_el:
+                lbl_text = lbl_el.get_text(strip=True).lower()
+                val_text = val_el.get_text(strip=True)
+                if "source" in lbl_text and details["source"] == "N/A":
+                    details["source"] = val_text
+                elif "publisher" in lbl_text and details["publisher"] == "N/A":
+                    details["publisher"] = val_text
+                elif "size" in lbl_text and details["file_size"] == "N/A":
+                    details["file_size"] = val_text
+                elif "updated" in lbl_text and details["updated_date"] == "N/A":
+                    details["updated_date"] = val_text
 
-        # 2. File Size Extraction
-        # Look for elements containing 'file size' or 'size'
-        size_el = d_soup.find(string=re.compile(r'file\s*size', re.I))
-        if size_el and size_el.parent and size_el.parent.parent:
-            text_block = size_el.parent.parent.get_text(separator=' ', strip=True)
-            m = re.search(r'(?:file\s*size|size)\s*[:\-]?\s*([0-9\.]+\s*(?:GB|MB|KB|TB))', text_block, re.I)
-            if m:
-                details["file_size"] = m.group(1).strip()
-            else:
-                m2 = re.search(r'\b([0-9\.]+\s*(?:GB|MB))\b', text_block, re.I)
-                if m2:
-                    details["file_size"] = m2.group(1).strip()
+        # Priority 2: Universal Fallback for Source link (e.g. external course domains)
+        if details["source"] == "N/A":
+            content_area = d_soup.select_one(".content-inner, .entry-content, .jeg_post_content, article")
+            if content_area:
+                for a in content_area.find_all("a", href=True):
+                    h = a["href"].strip()
+                    if any(domain in h.lower() for domain in [
+                        "udemy.com", "coursera.org", "skillshare.com", "domestika.org",
+                        "pluralsight.com", "edx.org", "linkedin.com/learning", "gumroad.com", "patreon.com"
+                    ]):
+                        details["source"] = h
+                        break
 
-        # Fallback regex across main content container
+        # Priority 3: Universal Fallback for Updated / Published Date
+        if details["updated_date"] == "N/A":
+            date_el = d_soup.select_one(".jeg_meta_date, time, .entry-date, .post-date, [class*='date']")
+            if date_el and date_el.get_text(strip=True):
+                details["updated_date"] = date_el.get_text(strip=True)
+            elif d_soup.find("time"):
+                t = d_soup.find("time")
+                details["updated_date"] = t.get("datetime") or t.get_text(strip=True)
+
+        # Priority 4: Universal Fallback for File Size
+        if details["file_size"] == "N/A":
+            size_el = d_soup.find(string=re.compile(r'file\s*size', re.I))
+            if size_el and size_el.parent and size_el.parent.parent:
+                text_block = size_el.parent.parent.get_text(separator=' ', strip=True)
+                m = re.search(r'(?:file\s*size|size)\s*[:\-]?\s*([0-9\.]+\s*(?:GB|MB|KB|TB))', text_block, re.I)
+                if m:
+                    details["file_size"] = m.group(1).strip()
+                else:
+                    m2 = re.search(r'\b([0-9\.]+\s*(?:GB|MB))\b', text_block, re.I)
+                    if m2:
+                        details["file_size"] = m2.group(1).strip()
+
         if details["file_size"] == "N/A":
             content_main = d_soup.select_one(".content-inner, .entry-content, .jeg_post_content, article")
             if content_main:
@@ -203,12 +236,11 @@ def extract_deep_details(session: requests.Session, url: str) -> dict[str, str]:
                 if m3:
                     details["file_size"] = m3.group(1).strip()
 
-        # 3. Description Summary Paragraph
+        # Priority 5: Description Summary Paragraph
         content_inner = d_soup.select_one(".content-inner, .entry-content, .jeg_post_content, article")
         if content_inner:
             for p in content_inner.find_all("p"):
                 t = p.get_text(strip=True)
-                # Filter out short fragments, download links, or disclaimers
                 if len(t) > 35 and not any(t.lower().startswith(b) for b in ["download", "password", "file size", "http", "www.", "click here"]):
                     details["description"] = t
                     break
@@ -232,7 +264,7 @@ def init_csv(filename: str, is_deep: bool) -> tuple[set[str], int]:
     count = 0
 
     if is_deep:
-        fieldnames = ["title", "url", "file_size", "updated_date", "description", "page_discovered", "scraped_at"]
+        fieldnames = ["title", "url", "source", "publisher", "file_size", "updated_date", "description", "page_discovered", "scraped_at"]
     else:
         fieldnames = ["title", "url", "page_discovered", "scraped_at"]
 
@@ -263,7 +295,7 @@ def append_to_csv(entry: dict[str, str], filename: str, is_deep: bool):
     """Appends a single scraped record to the CSV file immediately and flushes to disk."""
     output_path = os.path.abspath(filename)
     if is_deep:
-        fieldnames = ["title", "url", "file_size", "updated_date", "description", "page_discovered", "scraped_at"]
+        fieldnames = ["title", "url", "source", "publisher", "file_size", "updated_date", "description", "page_discovered", "scraped_at"]
     else:
         fieldnames = ["title", "url", "page_discovered", "scraped_at"]
 
@@ -282,7 +314,7 @@ def save_to_csv(data: list[dict[str, str]], filename: str, is_deep: bool = False
         return
     output_path = os.path.abspath(filename)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    fieldnames = ["title", "url", "file_size", "updated_date", "description", "page_discovered", "scraped_at"] if is_deep else ["title", "url", "page_discovered", "scraped_at"]
+    fieldnames = ["title", "url", "source", "publisher", "file_size", "updated_date", "description", "page_discovered", "scraped_at"] if is_deep else ["title", "url", "page_discovered", "scraped_at"]
     try:
         with open(output_path, mode="w", newline="", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
@@ -312,7 +344,7 @@ def parse_arguments():
         "--deep",
         action="store_true",
         default=False,
-        help="Extract deep metadata (file size, updated date, description) from each item's detail page"
+        help="Extract deep metadata (source link, publisher, file size, updated date, description) from each item's detail page"
     )
     parser.add_argument(
         "--max-pages", "-m",
@@ -349,7 +381,7 @@ def main():
     print("=" * 80, flush=True)
     print(f" Target URL      : {args.url}", flush=True)
     print(f" Output File     : {args.output}", flush=True)
-    print(f" Deep Details    : {'Enabled (File Size, Date, Description)' if args.deep else 'Disabled (Fast Listing Mode)'}", flush=True)
+    print(f" Deep Details    : {'Enabled (Source, Publisher, Size, Date, Description)' if args.deep else 'Disabled (Fast Listing Mode)'}", flush=True)
     print(f" Max Pages       : {'All pages' if args.max_pages <= 0 else args.max_pages}", flush=True)
     print(f" Request Delay   : {args.delay}s", flush=True)
     if args.keyword:
@@ -424,12 +456,15 @@ def main():
                         }
 
                         if args.deep:
-                            print(f"      [Detail] {item['title'][:45]}... ", end="", flush=True)
+                            print(f"      [Detail] {item['title'][:38]}... ", end="", flush=True)
                             details = extract_deep_details(session, item["url"])
+                            entry["source"] = details["source"]
+                            entry["publisher"] = details["publisher"]
                             entry["file_size"] = details["file_size"]
                             entry["updated_date"] = details["updated_date"]
                             entry["description"] = details["description"]
-                            print(f"-> Size: {details['file_size']} | Updated: {details['updated_date']}", flush=True)
+                            src_short = details["source"][:30] + "..." if len(details["source"]) > 30 else details["source"]
+                            print(f"-> Source: {src_short} | Size: {details['file_size']} | Updated: {details['updated_date']}", flush=True)
                             if args.delay > 0:
                                 time.sleep(min(args.delay, 0.5))
 
